@@ -1,0 +1,5 @@
+images
+__pycache__/
+.lightning_studio
+.EasyOCR
+best.pt
