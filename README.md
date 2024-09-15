@@ -1,141 +1,90 @@
-# ML Challenge Problem Statement
+# Amazon ML Challenge Submission: Model Mavericks
 
-## Feature Extraction from Images
+### Team Members:
+- **Darshan Patel**
+- **Divy Awasthi**
+- **Kaushik Bhowmick**
 
-In this hackathon, the goal is to create a machine learning model that extracts entity values from images. This capability is crucial in fields like healthcare, e-commerce, and content moderation, where precise product information is vital. As digital marketplaces expand, many products lack detailed textual descriptions, making it essential to obtain key details directly from images. These images provide important information such as weight, volume, voltage, wattage, dimensions, and many more, which are critical for digital stores.
+## Introduction
 
-### Data Description: 
+This repository contains the solution submitted by **Model Mavericks** for the Amazon ML Challenge. Our team primarily worked on building the `main.py` script and training a custom YOLO model for object detection using **Roboflow.ai**. Other files such as helper functions and utility scripts were part of the sample code provided by the competition organizers.
 
-The dataset consists of the following columns: 
+## File Structure
 
-1. **index:** An unique identifier (ID) for the data sample
-2. **image_link**: Public URL where the product image is available for download. Example link - https://m.media-amazon.com/images/I/71XfHPR36-L.jpg
-    To download images use `download_images` function from `src/utils.py`. See sample code in `src/test.ipynb`.
-3. **group_id**: Category code of the product
-4. **entity_name:** Product entity name. For eg: “item_weight” 
-5. **entity_value:** Product entity value. For eg: “34 gram” 
-    Note: For test.csv, you will not see the column `entity_value` as it is the target variable.
+### Project Root
+- **`main.py`**: Main script to perform object detection, OCR, and entity prediction. This was written by our team.
+- **`dataset/`**: Contains training and testing datasets in `.csv` format.
+- **`images/`**: Directory containing the images corresponding to dataset entries.
+- **`src/`**: Contains utility scripts provided by the competition organizers, such as sanity checks and image download scripts.
 
-### Output Format:
+## Core Code Explanation
 
-The output file should be a csv with 2 columns:
+### Main Script: `main.py`
+The script begins by importing key libraries like `torch`, `cv2`, `easyocr`, and `ultralytics` for object detection and OCR. It uses the YOLO model (`best.pt`) trained on Roboflow.ai to detect bounding boxes in the images and extract text using EasyOCR.
 
-1. **index:** The unique identifier (ID) of the data sample. Note the index should match the test record index.
-2. **prediction:** A string which should have the following format: “x unit” where x is a float number in standard formatting and unit is one of the allowed units (allowed units are mentioned in the Appendix). The two values should be concatenated and have a space between them. For eg: “2 gram”, “12.5 centimetre”, “2.56 ounce” are valid. Few invalid cases: “2 gms”, “60 ounce/1.7 kilogram”, “2.2e2 kilogram” etc.
-    Note: Make sure to output a prediction for all indices. If no value is found in the image for any test sample, return empty string, i.e, `“”`. If you have less/more number of output samples in the output file as compared to test.csv, your output won’t be evaluated. 
+The script sets the device to use CUDA if available, otherwise it defaults to CPU. The YOLO model is loaded with the `best.pt` weights, and the OCR reader is initialized to extract English text.
 
-### File Descriptions:
+## Workflow Explanation
 
-*source files*
+### Data Preprocessing
+The datasets (`train.csv` and `test.csv`) contain image links and entities to predict. The images are stored in the `images/` directory.
 
-1. **src/sanity.py**: Sanity checker to ensure that the final output file passes all formatting checks. Note: the script will not check if less/more number of predictions are present compared to the test file. See sample code in `src/test.ipynb` 
-2. **src/utils.py**: Contains helper functions for downloading images from the image_link.
-3. **src/constants.py:** Contains the allowed units for each entity type.
-4. **sample_code.py:** We also provided a sample dummy code that can generate an output file in the given format. Usage of this file is optional. 
+### Prediction Workflow
+- **YOLO Detection**: The YOLO model detects bounding boxes and object classes.
+- **OCR Extraction**: Text is extracted from the bounding boxes using EasyOCR.
+- **Text Parsing**: Extracted text is parsed to get numerical values and their corresponding units.
 
-*Dataset files*
+### Post-processing
+- Confidence filtering is applied, and the text with the highest confidence is kept for each entity type.
 
-1. **dataset/train.csv**: Training file with labels (`entity_value`).
-2. **dataset/test.csv**: Test file without output labels (`entity_value`). Generate predictions using your model/solution on this file's data and format the output file to match sample_test_out.csv (Refer the above section "Output Format")
-3. **dataset/sample_test.csv**: Sample test input file.
-4. **dataset/sample_test_out.csv**: Sample outputs for sample_test.csv. The output for test.csv must be formatted in the exact same way. Note: The predictions in the file might not be correct
+## YOLO Model Training
 
-### Constraints
+We used **Roboflow.ai** to train our YOLO model (`best.pt`). The process involved manually annotating around 300 images and exporting the dataset for training. The model was trained using transfer learning, and the weights were exported as `best.pt`. This model was then used in the `main.py` script for object detection.
 
-1. You will be provided with a sample output file and a sanity checker file. Format your output to match the sample output file exactly and pass it through the sanity checker to ensure its validity. Note: If the file does not pass through the sanity checker, it will not be evaluated. You should recieve a message like `Parsing successfull for file: ...csv` if the output file is correctly formatted.
+## Additional Files Provided by the Competition
 
-2. You are given the list of allowed units in constants.py and also in Appendix. Your outputs must be in these units. Predictions using any other units will be considered invalid during validation.
+- **`sanity.py`**: Sanity checker to ensure the final output file passes all formatting checks.
+- **`utils.py`**: Contains utility functions, such as downloading images from URLs.
+- **`constants.py`**: Defines the allowed units for each entity type and contains mappings used in text parsing.
 
-### Evaluation Criteria
+## Dataset Information
 
-Submissions will be evaluated based on F1 score, which are standard measures of prediction accuracy for classification and extraction problems.
+### Training Data
+- **`train.csv`**: Contains labeled data for supervised learning (`entity_value`).
 
-Let GT = Ground truth value for a sample and OUT be output prediction from the model for a sample. Then we classify the predictions into one of the 4 classes with the following logic: 
+### Test Data
+- **`test.csv`**: Contains unlabeled test data, used to generate predictions.
 
-1. *True Positives* - If OUT != `""` and GT != `""` and OUT == GT
-2. *False Positives* - If OUT != `""` and GT != `""` and OUT != GT
-3. *False Positives* - If OUT != `""` and GT == `""`
-4. *False Negatives* - If OUT == `""` and GT != `""`
-5. *True Negatives* - If OUT == `""` and GT == `""` 
+### Sample Data
+- **`sample_test.csv`**: Sample test input file provided to showcase the format of test data.
+- **`sample_test_out.csv`**: Sample output file demonstrating the correct output format for predictions.
 
-Then, F1 score = 2*Precision*Recall/(Precision + Recall) where:
+## Output Format
 
-1. Precision = True Positives/(True Positives + False Positives)
-2. Recall = True Positives/(True Positives + False Negatives)
+The output file must match the format of `sample_test_out.csv`. Each row should include:
+- **Index**: Row index from the test data.
+- **Prediction**: The predicted entity value, formatted as "number unit".
 
-### Submission File
+## Execution Instructions
 
-Upload a test_out.csv file in the Portal with the exact same formatting as sample_test_out.csv
-
-### Appendix
-
+### Dependencies
+To install the required dependencies, run:
+```bash
+pip install torch ultralytics easyocr pandas tqdm opencv-python-headless pillow numpy
 ```
-entity_unit_map = {
-  "width": {
-    "centimetre",
-    "foot",
-    "millimetre",
-    "metre",
-    "inch",
-    "yard"
-  },
-  "depth": {
-    "centimetre",
-    "foot",
-    "millimetre",
-    "metre",
-    "inch",
-    "yard"
-  },
-  "height": {
-    "centimetre",
-    "foot",
-    "millimetre",
-    "metre",
-    "inch",
-    "yard"
-  },
-  "item_weight": {
-    "milligram",
-    "kilogram",
-    "microgram",
-    "gram",
-    "ounce",
-    "ton",
-    "pound"
-  },
-  "maximum_weight_recommendation": {
-    "milligram",
-    "kilogram",
-    "microgram",
-    "gram",
-    "ounce",
-    "ton",
-    "pound"
-  },
-  "voltage": {
-    "millivolt",
-    "kilovolt",
-    "volt"
-  },
-  "wattage": {
-    "kilowatt",
-    "watt"
-  },
-  "item_volume": {
-    "cubic foot",
-    "microlitre",
-    "cup",
-    "fluid ounce",
-    "centilitre",
-    "imperial gallon",
-    "pint",
-    "decilitre",
-    "litre",
-    "millilitre",
-    "quart",
-    "cubic inch",
-    "gallon"
-  }
-}
+
+## Running the Script
+To run the script and generate predictions, use the following command:
+
+```bash
+python main.py
 ```
+
+## Best Practices
+
+1. **Error Handling**: The script includes error handling to ensure that processing continues even if individual rows or images encounter issues.
+2. **Memory Efficiency**: The dataset is processed in chunks to avoid excessive memory usage.
+3. **Parallel Processing**: Multiprocessing is used to speed up computation, especially for large datasets.
+4. **Modular Code**: Functions are modular and reusable for better maintainability.
+
+
